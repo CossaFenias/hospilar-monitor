@@ -16,7 +16,6 @@ typedef struct {
     int bp_diastolic;
 } SensorData;
 
-// Shared sensor queue (producer-consumer)
 typedef struct {
     SensorData buffer[SENSOR_QUEUE_SIZE];
     int in, out;
@@ -30,6 +29,11 @@ void sensor_queue_init(SensorQueue *q);
 void sensor_queue_destroy(SensorQueue *q);
 void sensor_queue_push(SensorQueue *q, SensorData data);
 SensorData sensor_queue_pop(SensorQueue *q);
+
+void sensors_start(pthread_t *threads);
+void sensors_join(pthread_t *threads);
+void set_running_flag(int val);
+SensorQueue* get_sensor_queue(void);
 
 void *sensor_thread(void *arg);
 

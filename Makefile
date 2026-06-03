@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pthread -g
+CFLAGS = -Wall -pthread
 TARGET = hospital_monitor
 OBJS = main.o sensors.o monitor.o alarms.o events.o logger.o
 
@@ -8,7 +8,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-%.o: %.c %.h synchronization.h
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
@@ -16,5 +16,3 @@ clean:
 
 run: $(TARGET)
 	./$(TARGET)
-
-.PHONY: all clean run

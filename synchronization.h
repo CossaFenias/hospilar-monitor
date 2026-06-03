@@ -3,6 +3,8 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdio.h>   // ADD for perror
+#include <stdlib.h>  // ADD for exit
 #include <errno.h>
 
 /* Wrapper for mutex operations with error checking */

@@ -10,6 +10,10 @@
 
 static volatile int running = 1;
 
+void monitor_set_running(int val) {
+    running = val;
+}
+
 void patient_records_init(PatientRecord *records) {
     for (int i = 0; i < N_PATIENTS; i++) {
         records[i].patient_id = i + 1;

@@ -2,9 +2,14 @@
 #include "logger.h"
 #include "synchronization.h"
 #include <stdio.h>
+#include <string.h>  // ADD THIS for strcpy
 #include <unistd.h>
 
 static volatile int running = 1;
+
+void alarm_set_running(int val) {
+    running = val;
+}
 
 void *alarm_thread(void *arg) {
     EventQueue *eq = (EventQueue*)arg;

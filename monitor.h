@@ -19,5 +19,6 @@ typedef struct {
 void patient_records_init(PatientRecord *records);
 void monitor_start(pthread_t *thread, PatientRecord *records, EventQueue *eq);
 void monitor_join(pthread_t thread);
+void monitor_set_running(int val);
 
 #endif

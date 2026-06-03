@@ -21,6 +21,30 @@ void sensor_queue_destroy(SensorQueue *q) {
     SEM_DESTROY(&q->full);
 }
 
+static volatile int running = 1;
+
+void set_running_flag(int val) {
+    running = val;
+}
+
+SensorQueue* get_sensor_queue(void) {
+    return &sensor_q;
+}
+
+void sensors_start(pthread_t *threads) {
+    sensor_queue_init(&sensor_q);
+    for (long i = 0; i < N_SENSORS; i++) {
+        pthread_create(&threads[i], NULL, sensor_thread, (void*)i);
+    }
+}
+
+void sensors_join(pthread_t *threads) {
+    for (int i = 0; i < N_SENSORS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    sensor_queue_destroy(&sensor_q);
+}
+
 void sensor_queue_push(SensorQueue *q, SensorData data) {
     SEM_WAIT(&q->empty);
     MUTEX_LOCK(&q->mutex);
