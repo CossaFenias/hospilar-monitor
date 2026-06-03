@@ -10,9 +10,13 @@
 
 static volatile int running = 1;
 
+/* ========== Control Functions ========== */
+
 void monitor_set_running(int val) {
     running = val;
 }
+
+/* ========== Patient Records Functions ========== */
 
 void patient_records_init(PatientRecord *records) {
     for (int i = 0; i < N_PATIENTS; i++) {
@@ -26,6 +30,8 @@ void patient_records_init(PatientRecord *records) {
     }
 }
 
+/* ========== Priority Calculation ========== */
+
 static int compute_priority(const SensorData *data) {
     // Emergency (Priority 1)
     if (data->heart_rate > 150 || data->heart_rate < 30 ||
@@ -33,6 +39,7 @@ static int compute_priority(const SensorData *data) {
         data->spo2 < 85 ||
         data->bp_systolic > 180 || data->bp_systolic < 80)
         return 1;
+    
     // Urgent (Priority 2) – thresholds from spec
     if (data->heart_rate > 120 || data->heart_rate < 40 ||
         data->temperature > 39.0 ||
@@ -40,13 +47,18 @@ static int compute_priority(const SensorData *data) {
         data->bp_systolic > 140 || data->bp_systolic < 90 ||
         data->bp_diastolic > 90)
         return 2;
-    // Normal – but we only generate events if threshold violated
+    
+    // Normal (Priority 3)
     return 3;
 }
 
+/* ========== Alarm Generation ========== */
+
 static void check_and_raise_alarm(PatientRecord *records, const SensorData *data, EventQueue *eq) {
     int priority = compute_priority(data);
-    if (priority <= 2) {  // Only generate events for violations (priority 1 or 2)
+    
+    // Only generate events for violations (priority 1 or 2)
+    if (priority <= 2) {
         AlarmEvent ev;
         ev.priority = priority;
         ev.patient_id = data->patient_id;
@@ -63,6 +75,8 @@ static void check_and_raise_alarm(PatientRecord *records, const SensorData *data
         log_event("MONITOR", log_buf);
     }
 }
+
+/* ========== Monitor Thread ========== */
 
 void *monitor_thread(void *arg) {
     struct {
@@ -89,15 +103,19 @@ void *monitor_thread(void *arg) {
         // Evaluate and possibly raise alarm
         check_and_raise_alarm(params->records, &data, params->eq);
     }
+    
     log_event("MONITOR", "exiting");
     return NULL;
 }
+
+/* ========== Start/Join Functions ========== */
 
 void monitor_start(pthread_t *thread, PatientRecord *records, EventQueue *eq) {
     static struct {
         PatientRecord *records;
         EventQueue *eq;
     } params;
+    
     params.records = records;
     params.eq = eq;
     pthread_create(thread, NULL, monitor_thread, &params);
@@ -105,8 +123,4 @@ void monitor_start(pthread_t *thread, PatientRecord *records, EventQueue *eq) {
 
 void monitor_join(pthread_t thread) {
     pthread_join(thread, NULL);
-}
-
-void monitor_set_running(int val) {
-    running = val;
 }
