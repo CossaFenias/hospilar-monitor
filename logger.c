@@ -1,16 +1,17 @@
 #include "logger.h"
+#include "events.h"  // Added this line to resolve the implicit declaration error
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
 
-// Simple thread-safe logging using a dedicated mutex (reusing gui_mutex for simplicity or a dedicated one)
-// For production, a dedicated logger mutex is better. We'll use a static one here.
+// Simple thread-safe logging using a dedicated mutex
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void log_event(const char* level, const char* message) {
     pthread_mutex_lock(&log_mutex);
     char timestamp[32];
     get_timestamp(timestamp);
+    
     FILE* f = fopen("hospital.log", "a");
     if (f) {
         fprintf(f, "[%s] [%s] %s\n", timestamp, level, message);
