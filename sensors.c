@@ -8,6 +8,8 @@
 static SensorQueue sensor_q;
 static volatile int running = 1;
 
+/* ========== Sensor Queue Functions ========== */
+
 void sensor_queue_init(SensorQueue *q) {
     q->in = q->out = q->count = 0;
     MUTEX_INIT(&q->mutex);
@@ -19,30 +21,6 @@ void sensor_queue_destroy(SensorQueue *q) {
     MUTEX_DESTROY(&q->mutex);
     SEM_DESTROY(&q->empty);
     SEM_DESTROY(&q->full);
-}
-
-static volatile int running = 1;
-
-void set_running_flag(int val) {
-    running = val;
-}
-
-SensorQueue* get_sensor_queue(void) {
-    return &sensor_q;
-}
-
-void sensors_start(pthread_t *threads) {
-    sensor_queue_init(&sensor_q);
-    for (long i = 0; i < N_SENSORS; i++) {
-        pthread_create(&threads[i], NULL, sensor_thread, (void*)i);
-    }
-}
-
-void sensors_join(pthread_t *threads) {
-    for (int i = 0; i < N_SENSORS; i++) {
-        pthread_join(threads[i], NULL);
-    }
-    sensor_queue_destroy(&sensor_q);
 }
 
 void sensor_queue_push(SensorQueue *q, SensorData data) {
@@ -66,9 +44,23 @@ SensorData sensor_queue_pop(SensorQueue *q) {
     return data;
 }
 
+/* ========== Helper Functions ========== */
+
 static int rand_range(int min, int max) {
     return min + rand() % (max - min + 1);
 }
+
+/* ========== Control Functions ========== */
+
+void set_running_flag(int val) {
+    running = val;
+}
+
+SensorQueue* get_sensor_queue(void) {
+    return &sensor_q;
+}
+
+/* ========== Sensor Thread Functions ========== */
 
 void *sensor_thread(void *arg) {
     long id = (long)arg;
@@ -95,6 +87,7 @@ void *sensor_thread(void *arg) {
 
         usleep(200000 + rand() % 300000); // 0.2-0.5 sec
     }
+    
     log_event("SENSOR", "exiting");
     return NULL;
 }
@@ -111,13 +104,4 @@ void sensors_join(pthread_t *threads) {
         pthread_join(threads[i], NULL);
     }
     sensor_queue_destroy(&sensor_q);
-}
-
-// Make sensor queue accessible to monitor thread
-SensorQueue* get_sensor_queue(void) {
-    return &sensor_q;
-}
-
-void set_running_flag(int val) {
-    running = val;
 }
