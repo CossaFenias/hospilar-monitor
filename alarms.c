@@ -1,9 +1,14 @@
 #include "alarms.h"
+#include "events.h"   // Added for dequeue_event
+#include "logger.h"   // Added for log_event
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>   // Added for usleep
 
 void* alarm_thread(void* arg) {
+    (void)arg; // Suppress unused parameter warning
     Event ev;
+    
     while (system_running) {
         // Consumer: blocks here until an event is available (sem_wait)
         if (dequeue_event(&ev)) {
