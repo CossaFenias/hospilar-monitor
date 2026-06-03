@@ -1,34 +1,20 @@
 #include "logger.h"
-#include "synchronization.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <time.h>
+#include <stdarg.h>
 
-static FILE *log_file = NULL;
+// Simple thread-safe logging using a dedicated mutex (reusing gui_mutex for simplicity or a dedicated one)
+// For production, a dedicated logger mutex is better. We'll use a static one here.
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void log_init(const char *filename) {
-    log_file = fopen(filename, "a");
-    if (!log_file) {
-        perror("fopen log");
-        exit(EXIT_FAILURE);
+void log_event(const char* level, const char* message) {
+    pthread_mutex_lock(&log_mutex);
+    char timestamp[32];
+    get_timestamp(timestamp);
+    FILE* f = fopen("hospital.log", "a");
+    if (f) {
+        fprintf(f, "[%s] [%s] %s\n", timestamp, level, message);
+        fclose(f);
     }
-    setvbuf(log_file, NULL, _IOLBF, 0); // line buffered
-}
-
-void log_event(const char *tag, const char *message) {
-    time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
-    char time_buf[64];
-    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info);
-
-    MUTEX_LOCK(&log_mutex);
-    fprintf(log_file, "[%s] [%s] %s\n", time_buf, tag, message);
-    fflush(log_file);
-    MUTEX_UNLOCK(&log_mutex);
-}
-
-void log_close(void) {
-    if (log_file) fclose(log_file);
+    pthread_mutex_unlock(&log_mutex);
 }

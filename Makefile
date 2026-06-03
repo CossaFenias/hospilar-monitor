@@ -1,18 +1,21 @@
 CC = gcc
-CFLAGS = -Wall -pthread
+CFLAGS = -Wall -Wextra -pthread -g
+LDFLAGS = -pthread -lncurses
+
+SRCS = main.c synchronization.c events.c logger.c sensors.c monitor.c alarms.c gui.c
+OBJS = $(SRCS:.c=.o)
 TARGET = hospital_monitor
-OBJS = main.o sensors.o monitor.o alarms.o events.o logger.o
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) hospital.log
 
 run: $(TARGET)
 	./$(TARGET)

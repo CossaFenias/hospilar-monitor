@@ -1,54 +1,21 @@
 #include "alarms.h"
-#include "logger.h"
-#include "synchronization.h"
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
-static volatile int running = 1;
-
-void alarm_set_running(int val) {
-    running = val;
-}
-
-void *alarm_thread(void *arg) {
-    EventQueue *eq = (EventQueue*)arg;
-    log_event("ALARM", "started");
-
-    while (running) {
-        AlarmEvent ev = event_queue_pop(eq);  // blocks if empty
-        char priority_str[16];
-        
-        switch (ev.priority) {
-            case 1: 
-                strcpy(priority_str, "EMERGENCY"); 
-                break;
-            case 2: 
-                strcpy(priority_str, "URGENT"); 
-                break;
-            default: 
-                strcpy(priority_str, "NORMAL");
+void* alarm_thread(void* arg) {
+    Event ev;
+    while (system_running) {
+        // Consumer: blocks here until an event is available (sem_wait)
+        if (dequeue_event(&ev)) {
+            const char* prio_str = (ev.priority == PRIORITY_EMERGENCY) ? "!!! EMERGENCY !!!" : "!! URGENT !!";
+            char log_msg[256];
+            sprintf(log_msg, "ALARM TRIGGERED - Patient %d: %s | %s", ev.patient_id, prio_str, ev.description);
+            
+            log_event("ALARM", log_msg);
+            
+            // Simulate alarm handling time (e.g., notifying nurses)
+            usleep(200000); 
         }
-        
-        char log_buf[512];
-        snprintf(log_buf, sizeof(log_buf),
-                 "ALARM TRIGGERED [%s] %s",
-                 priority_str, ev.message);
-        log_event("ALARM", log_buf);
-        printf("\n*** %s ***\n", log_buf);
-        
-        // Simulate alarm handling
-        usleep(100000);
     }
-    
-    log_event("ALARM", "exiting");
     return NULL;
-}
-
-void alarm_start(pthread_t *thread, EventQueue *eq) {
-    pthread_create(thread, NULL, alarm_thread, eq);
-}
-
-void alarm_join(pthread_t thread) {
-    pthread_join(thread, NULL);
 }

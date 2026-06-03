@@ -3,87 +3,57 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <stdio.h>   // ADD for perror
-#include <stdlib.h>  // ADD for exit
-#include <errno.h>
+#include <stdbool.h>
 
-/* Wrapper for mutex operations with error checking */
-#define MUTEX_LOCK(m) do { \
-    if (pthread_mutex_lock(m) != 0) { \
-        perror("pthread_mutex_lock"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
+#define MAX_PATIENTS 5
+#define MAX_EVENTS 50
 
-#define MUTEX_UNLOCK(m) do { \
-    if (pthread_mutex_unlock(m) != 0) { \
-        perror("pthread_mutex_unlock"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
+// Priority Levels
+typedef enum { PRIORITY_NORMAL = 3, PRIORITY_URGENT = 2, PRIORITY_EMERGENCY = 1 } Priority;
 
-#define MUTEX_INIT(m) do { \
-    if (pthread_mutex_init(m, NULL) != 0) { \
-        perror("pthread_mutex_init"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
+// Patient Status
+typedef enum { STATUS_NORMAL, STATUS_URGENT, STATUS_EMERGENCY } PatientStatus;
 
-#define MUTEX_DESTROY(m) pthread_mutex_destroy(m)
+// Shared Patient Structure
+typedef struct {
+    int id;
+    char name[32];
+    int heart_rate;      // bpm
+    float temperature;   // Celsius
+    int oxygen_sat;      // %
+    int bp_systolic;     // mmHg
+    int bp_diastolic;    // mmHg
+    PatientStatus status;
+    pthread_mutex_t lock; // Protects this specific patient's data
+} Patient;
 
-/* Condition variable wrappers */
-#define COND_WAIT(c, m) do { \
-    if (pthread_cond_wait(c, m) != 0) { \
-        perror("pthread_cond_wait"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
+// Event Structure
+typedef struct {
+    int patient_id;
+    Priority priority;
+    char description[128];
+    char timestamp[32];
+} Event;
 
-#define COND_SIGNAL(c) do { \
-    if (pthread_cond_signal(c) != 0) { \
-        perror("pthread_cond_signal"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
+// Bounded Buffer for Producer-Consumer
+typedef struct {
+    Event events[MAX_EVENTS];
+    int head;
+    int tail;
+    int count;
+    pthread_mutex_t mutex;
+    sem_t empty; // Counts empty slots
+    sem_t full;  // Counts filled slots
+} EventQueue;
 
-#define COND_BROADCAST(c) do { \
-    if (pthread_cond_broadcast(c) != 0) { \
-        perror("pthread_cond_broadcast"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
+// Global Synchronization Objects
+extern Patient patients[MAX_PATIENTS];
+extern EventQueue event_queue;
+extern pthread_mutex_t gui_mutex; // Protects GUI read operations
+extern pthread_cond_t monitor_cv; // Wakes up monitor thread
+extern bool system_running;
 
-#define COND_INIT(c) do { \
-    if (pthread_cond_init(c, NULL) != 0) { \
-        perror("pthread_cond_init"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
-
-#define COND_DESTROY(c) pthread_cond_destroy(c)
-
-/* Semaphore wrappers */
-#define SEM_WAIT(s) do { \
-    if (sem_wait(s) != 0) { \
-        perror("sem_wait"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
-
-#define SEM_POST(s) do { \
-    if (sem_post(s) != 0) { \
-        perror("sem_post"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
-
-#define SEM_INIT(s, pshared, value) do { \
-    if (sem_init(s, pshared, value) != 0) { \
-        perror("sem_init"); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
-
-#define SEM_DESTROY(s) sem_destroy(s)
+void sync_init();
+void sync_destroy();
 
 #endif
