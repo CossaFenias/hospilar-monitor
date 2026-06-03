@@ -1,8 +1,11 @@
 #include "monitor.h"
+#include "logger.h"   // Added to resolve the implicit declaration of log_event
 #include <stdio.h>
 #include <unistd.h>
 
 void* monitor_thread(void* arg) {
+    (void)arg; // Suppress unused parameter warning
+
     while (system_running) {
         // Wait for signal from sensors (eliminates busy waiting)
         pthread_mutex_lock(&gui_mutex);
