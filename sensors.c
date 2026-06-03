@@ -1,4 +1,6 @@
 #include "sensors.h"
+#include "events.h"   // Added for get_timestamp and enqueue_event
+#include "logger.h"   // Added for log_event
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -9,8 +11,8 @@ void* sensor_thread(void* arg) {
     Patient* p = &patients[patient_id - 1];
 
     while (system_running) {
-        // Simulate sensor reading delay
-        usleep(500000 + rand() % 500000); // 0.5 to 1.0 seconds
+        // Simulate sensor reading delay (0.5 to 1.0 seconds)
+        usleep(500000 + rand() % 500000); 
 
         // Generate realistic but occasionally anomalous data
         int hr = 60 + rand() % 80; // 60-140
@@ -70,7 +72,7 @@ void* sensor_thread(void* arg) {
         }
 
         // Signal monitor that data has changed
-        pthread_mutex_lock(&gui_mutex); // Using as a general system state lock for condition
+        pthread_mutex_lock(&gui_mutex); 
         pthread_cond_signal(&monitor_cv);
         pthread_mutex_unlock(&gui_mutex);
     }
