@@ -28,8 +28,7 @@ void cleanup_gui() {
 }
 
 void* gui_thread(void* arg) {
-    int active_alarms = 0;
-    int total_events = 0;
+    (void)arg; // Suppress unused parameter warning
 
     while (system_running) {
         clear();
@@ -67,7 +66,7 @@ void* gui_thread(void* arg) {
             attroff(COLOR_PAIR(color_pair) | A_BOLD);
         }
 
-        // Active Alarms Panel (Simulated by reading queue count)
+        // Active Alarms Panel (Read queue count safely)
         pthread_mutex_lock(&event_queue.mutex);
         int queue_size = event_queue.count;
         pthread_mutex_unlock(&event_queue.mutex);
